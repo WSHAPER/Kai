@@ -132,7 +132,7 @@ private fun stepLabel(state: BuildEnvironmentState.Installing): String = when (s
     BuildStep.Download -> stringResource(
         Res.string.kai_build_step_download,
         ((state.progress ?: 0f) * 100).toInt(),
-    )
+    ).collapsePercentEscape()
     BuildStep.Extract -> stringResource(Res.string.kai_build_step_extract)
     BuildStep.Configure -> stringResource(Res.string.kai_build_step_configure)
     BuildStep.BasePackages -> stringResource(Res.string.kai_build_step_base_packages)
@@ -141,3 +141,15 @@ private fun stepLabel(state: BuildEnvironmentState.Installing): String = when (s
         BuildAgents.get(state.agentId)?.title.orEmpty(),
     )
 }
+
+/**
+ * Collapses the "%%" escape that Compose Multiplatform 1.12.1's string
+ * resource formatter leaves in place: it only substitutes %1$d / %1$s
+ * tokens and passes "%%" through verbatim instead of unescaping it to a
+ * literal "%" the way java.util.Formatter does. The resource files keep
+ * the "%%" escape (Android i18n convention, and required if a future CMP
+ * ever delegates to String.format), so this call site normalizes the
+ * rendered label. The collapse becomes a no-op once CMP unescapes "%%"
+ * itself.
+ */
+internal fun String.collapsePercentEscape(): String = replace("%%", "%")
